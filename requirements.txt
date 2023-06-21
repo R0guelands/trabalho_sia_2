@@ -1,0 +1,5 @@
+pandas 
+sklearn 
+tensorflow
+opencv-python
+mediapipe
