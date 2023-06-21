@@ -69,7 +69,7 @@ def train_model(X, y, num_classes):
     )
 
     print(model.summary())
-    
+
     people = pd.DataFrame(label_encoder.classes_, columns=["username"])
 
     people.to_csv("people.csv", index=False)
