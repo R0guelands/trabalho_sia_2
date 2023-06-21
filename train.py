@@ -3,6 +3,8 @@ from sklearn import preprocessing
 import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
 
 
 # import os
@@ -10,6 +12,8 @@ from sklearn.preprocessing import LabelEncoder
 
 
 import tensorflow as tf
+
+
 class Data:
     def __init__(self, df):
         self.df = df
@@ -33,6 +37,38 @@ class Data:
         self._normalize_numeric()
         self._normalize_categorical()
 
+    def _balance_column(
+        self, df: pd.DataFrame, col_name: str, option: str = "up"
+    ) -> pd.DataFrame:
+        X = df.drop(col_name, axis=1)
+        y = df[col_name]
+
+        if option == "up":
+            sampler = RandomOverSampler()
+        elif option == "down":
+            sampler = RandomUnderSampler()
+
+        X_resampled, y_resampled = sampler.fit_resample(X, y)
+        X_resampled = pd.DataFrame(X_resampled, columns=X.columns)
+        y_resampled = pd.Series(y_resampled, name=col_name)
+
+        return pd.concat([X_resampled, y_resampled], axis=1)
+
+    def balance(self, col_list=None, option: str = "up"):
+        if col_list is not None:
+            df_categorical = self.df[col_list].select_dtypes(include=["object"])
+        else:
+            df_categorical = self.df.select_dtypes(include=["object"])
+
+        if len(df_categorical.columns) == 0:
+            return
+
+        rebalanced_df = self.df.copy()
+        for col_name in df_categorical.columns:
+            rebalanced_df = self._balance_column(rebalanced_df, col_name, option)
+
+        self.df = rebalanced_df.reset_index(drop=True).copy()
+
 
 def calculate_accuracy(model, X, y):
     y_pred = model.predict(X)
@@ -45,7 +81,7 @@ def calculate_accuracy(model, X, y):
 
 
 def create_model(input_shape, num_classes):
-    l2_reg=0.015
+    l2_reg = 0.015
     # model = tf.keras.models.Sequential(
     #     [
     #         tf.keras.layers.Dense(1024, activation="relu", input_shape=input_shape, kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
@@ -58,11 +94,32 @@ def create_model(input_shape, num_classes):
     # )
     model = tf.keras.models.Sequential(
         [
-            tf.keras.layers.Dense(512, activation="relu", input_shape=input_shape, kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(1024, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(512, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(1024, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(512, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+            tf.keras.layers.Dense(
+                512,
+                activation="relu",
+                input_shape=input_shape,
+                kernel_regularizer=tf.keras.regularizers.l2(l2_reg),
+            ),
+            tf.keras.layers.Dense(
+                1024,
+                activation="relu",
+                kernel_regularizer=tf.keras.regularizers.l2(l2_reg),
+            ),
+            tf.keras.layers.Dense(
+                512,
+                activation="relu",
+                kernel_regularizer=tf.keras.regularizers.l2(l2_reg),
+            ),
+            tf.keras.layers.Dense(
+                1024,
+                activation="relu",
+                kernel_regularizer=tf.keras.regularizers.l2(l2_reg),
+            ),
+            tf.keras.layers.Dense(
+                512,
+                activation="relu",
+                kernel_regularizer=tf.keras.regularizers.l2(l2_reg),
+            ),
             tf.keras.layers.Dense(num_classes, activation="softmax"),
         ]
     )
@@ -92,9 +149,14 @@ def train_model(X, y, num_classes):
     )
     input_shape = (X_train.shape[1],)
     model = create_model(input_shape, num_classes)
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices("GPU")))
     model.fit(
-        X_train, y_train, epochs=200, batch_size=64, validation_data=(X_test, y_test), use_multiprocessing=True
+        X_train,
+        y_train,
+        epochs=200,
+        batch_size=64,
+        validation_data=(X_test, y_test),
+        use_multiprocessing=True,
     )
 
     print(model.summary())
@@ -115,6 +177,7 @@ def main():
     df = pd.read_csv("data.csv")
     data = Data(df)
     data.normalize()
+    data.balance()
 
     # data.df.to_csv("normalized_data.csv", index=False)
 
