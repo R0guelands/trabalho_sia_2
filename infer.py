@@ -30,7 +30,7 @@ def infer(model: tf.keras.Model, data: pd.DataFrame):
 
     percentage = probabilities[chosen_class] * 100
 
-    if percentage > 80:
+    if percentage > 65:
         return chosen_class, percentage
     else:
         return "Unknown", percentage

@@ -45,16 +45,37 @@ def calculate_accuracy(model, X, y):
 
 
 def create_model(input_shape, num_classes):
-    l2_reg=0.01
+    l2_reg=0.015
+    # model = tf.keras.models.Sequential(
+    #     [
+    #         tf.keras.layers.Dense(1024, activation="relu", input_shape=input_shape, kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(2048, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(1024, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(2048, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(1024, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(num_classes, activation="softmax"),
+    #     ]
+    # )
     model = tf.keras.models.Sequential(
         [
-            tf.keras.layers.Dense(640, activation="relu", input_shape=input_shape, kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(1280, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(2460, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
-            tf.keras.layers.Dense(1280, activation="relu",kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+            tf.keras.layers.Dense(512, activation="relu", input_shape=input_shape, kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+            tf.keras.layers.Dense(1024, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+            tf.keras.layers.Dense(512, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+            tf.keras.layers.Dense(1024, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+            tf.keras.layers.Dense(512, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
             tf.keras.layers.Dense(num_classes, activation="softmax"),
         ]
     )
+    # model = tf.keras.models.Sequential(
+    #     [
+    #         tf.keras.layers.Dense(256, activation="relu", input_shape=input_shape, kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(512, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(256, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(512, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(256, activation="relu", kernel_regularizer=tf.keras.regularizers.l2(l2_reg)),
+    #         tf.keras.layers.Dense(num_classes, activation="softmax"),
+    #     ]
+    # )
     model.compile(
         optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
     )
@@ -73,7 +94,7 @@ def train_model(X, y, num_classes):
     model = create_model(input_shape, num_classes)
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
     model.fit(
-        X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), use_multiprocessing=True
+        X_train, y_train, epochs=200, batch_size=64, validation_data=(X_test, y_test), use_multiprocessing=True
     )
 
     print(model.summary())
