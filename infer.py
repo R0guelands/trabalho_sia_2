@@ -5,7 +5,7 @@ import mediapipe as mp
 import pandas as pd
 import pickle
 import numpy as np
-
+import time
 
 def draw_facemesh(image, face_landmarks):
     mp_drawing.draw_landmarks(
@@ -17,14 +17,14 @@ def draw_facemesh(image, face_landmarks):
     )
 
 
-def load_model(model_path):
+def load_model(model_path: str) -> tf.keras.Model:
     return tf.keras.models.load_model(model_path)
 
 
-def infer(model, data):
+def infer(model: tf.keras.Model, data: pd.DataFrame) -> int:
     data = data.to_numpy()
-    predictions = model.predict(data)
-    return tf.argmax(predictions, axis=1).numpy()[0]
+    predictions = model.predict(data, use_multiprocessing=True)
+    return np.bincount(tf.argmax(predictions, axis=1).numpy()).argmax()
 
 
 def normalize(df):
@@ -58,6 +58,8 @@ def calculate_distances(face_landmarks):
 
 
 def main():
+    start_time = time.time()
+
     model_path = "model"
     model = load_model(model_path)
 
@@ -85,7 +87,7 @@ def main():
                     df = pd.concat(
                         [df, calculate_distances(face_landmarks)], ignore_index=True
                     )
-                    if df.shape[0] == 64:
+                    if df.shape[0] == 30:
                         df = normalize(df)
                         result = infer(model, df)
                         df = pd.DataFrame()
@@ -98,8 +100,21 @@ def main():
                         (255, 0, 0),
                         2,
                     )
+            elapsed_time = time.time() - start_time
+            fps = 1 / elapsed_time if elapsed_time > 0 else 0
+            cv2.putText(
+                image,
+                f"FPS: {int(fps)}",
+                (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )
 
-            cv2.imshow("Face Mesh", image)
+            cv2.imshow("Face detection", image)
+
+            start_time = time.time()
 
             if cv2.waitKey(5) & 0xFF == ord("q"):
                 break

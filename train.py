@@ -44,7 +44,9 @@ def create_model(input_shape, num_classes):
     model = tf.keras.models.Sequential(
         [
             tf.keras.layers.Dense(64, activation="relu", input_shape=input_shape),
-            tf.keras.layers.Dense(64, activation="relu"),
+            tf.keras.layers.Dense(128, activation="relu"),
+            tf.keras.layers.Dense(246, activation="relu"),
+            tf.keras.layers.Dense(128, activation="relu"),
             tf.keras.layers.Dense(num_classes, activation="softmax"),
         ]
     )
@@ -64,8 +66,9 @@ def train_model(X, y, num_classes):
     )
     input_shape = (X_train.shape[1],)
     model = create_model(input_shape, num_classes)
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
     model.fit(
-        X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test)
+        X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), use_multiprocessing=True
     )
 
     print(model.summary())
