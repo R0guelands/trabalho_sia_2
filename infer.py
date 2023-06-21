@@ -21,10 +21,19 @@ def load_model(model_path: str) -> tf.keras.Model:
     return tf.keras.models.load_model(model_path)
 
 
-def infer(model: tf.keras.Model, data: pd.DataFrame) -> int:
+def infer(model: tf.keras.Model, data: pd.DataFrame):
     data = data.to_numpy()
     predictions = model.predict(data, use_multiprocessing=True)
-    return np.bincount(tf.argmax(predictions, axis=1).numpy()).argmax()
+    probabilities = np.max(predictions, axis=1)
+    predicted_class = np.argmax(predictions, axis=1)
+    chosen_class = np.bincount(predicted_class).argmax()
+
+    percentage = probabilities[chosen_class] * 100
+
+    if percentage > 80:
+        return chosen_class, percentage
+    else:
+        return "Unknown", percentage
 
 
 def normalize(df):
@@ -70,6 +79,7 @@ def main():
 
     df = pd.DataFrame()
     result = "Unknown"
+    percentage = 0
     with mp_face_mesh.FaceMesh(
         static_image_mode=False, max_num_faces=1, min_detection_confidence=0.5
     ) as face_mesh:
@@ -89,11 +99,11 @@ def main():
                     )
                     if df.shape[0] == 30:
                         df = normalize(df)
-                        result = infer(model, df)
+                        result, percentage = infer(model, df)
                         df = pd.DataFrame()
                     cv2.putText(
                         image,
-                        f"Person: {users[result] if result != 'Unknown' else result}",
+                f"Person: {users[result] if result != 'Unknown' else result}; {percentage:.1f}%",
                         (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         1,
