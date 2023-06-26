@@ -51,8 +51,9 @@ def calculate_distances(face_landmarks):
 
 
 def main():
-    cap = cv2.VideoCapture("http://192.168.18.118:8080/video", cv2.CAP_FFMPEG)
-
+    # cap = cv2.VideoCapture("http://192.168.18.118:8080/video", cv2.CAP_FFMPEG)
+    cap = cv2.VideoCapture(1)
+    
     df = pd.DataFrame()
 
     with mp_face_mesh.FaceMesh(

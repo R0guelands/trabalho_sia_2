@@ -65,6 +65,44 @@ def calculate_distances(face_landmarks):
 
     return pd.DataFrame(distances_1d, index=[0])
 
+def get_bounding_box(face_landmarks, image_width, image_height):
+    x_min = image_width
+    y_min = image_height
+    x_max = 0
+    y_max = 0
+    
+    for landmark in face_landmarks.landmark:
+        x = int(landmark.x * image_width)
+        y = int(landmark.y * image_height)
+
+        if x < x_min:
+            x_min = x
+        if x > x_max:
+            x_max = x
+        if y < y_min:
+            y_min = y
+        if y > y_max:
+            y_max = y
+    
+    width = x_max - x_min
+    height = y_max - y_min
+    
+    return x_min, y_min, width, height
+
+# Função para desenhar o retângulo e inserir o nome da pessoa
+def draw_rectangle(image, bbox, name):
+    x, y, w, h = bbox
+    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 3)
+    cv2.putText(
+        image,
+        f"Person: {name}",
+        (x, y - 10),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        (0, 255, 0),
+        3,
+    )
+    
 
 def main():
     start_time = time.time()
@@ -75,7 +113,8 @@ def main():
     users = pd.read_csv("people.csv")
     users = users["username"].apply(lambda x: x.split("_")[1]).to_list()
 
-    cap = cv2.VideoCapture("http://192.168.18.118:8080/video", cv2.CAP_FFMPEG)
+    # cap = cv2.VideoCapture("http://192.168.18.118:8080/video", cv2.CAP_FFMPEG)
+    cap = cv2.VideoCapture(1)
 
     df = pd.DataFrame()
     result = "Unknown"
@@ -101,26 +140,14 @@ def main():
                         df = normalize(df)
                         result, percentage = infer(model, df)
                         df = pd.DataFrame()
-                    cv2.putText(
-                        image,
-                f"Person: {users[result] if result != 'Unknown' else result}; {percentage:.1f}%",
-                        (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1,
-                        (255, 0, 0),
-                        2,
-                    )
+                        
+                    bbox = get_bounding_box(face_landmarks, image.shape[1], image.shape[0])
+                    name = users[result] if result != 'Unknown' else result
+                    draw_rectangle(image, bbox, name)
+                    
             elapsed_time = time.time() - start_time
             fps = 1 / elapsed_time if elapsed_time > 0 else 0
-            cv2.putText(
-                image,
-                f"FPS: {int(fps)}",
-                (10, 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 0, 255),
-                2,
-            )
+            cv2.putText(image, f'FPS: {str(int(fps))}', (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (0,255,0), 3)
 
             cv2.imshow("Face detection", image)
 
